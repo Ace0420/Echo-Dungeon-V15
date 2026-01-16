@@ -173,10 +173,6 @@
             female: {
                 name: 'Female',
                 pronouns: { subject: 'she', object: 'her', possessive: 'her' }
-            },
-            nonbinary: {
-                name: 'Non-binary',
-                pronouns: { subject: 'they', object: 'them', possessive: 'their' }
             }
         };
 
@@ -632,18 +628,8 @@
                         'You can be a Human, Elf, Dwarf, or Orc.',
                         'Humans are balanced. Elves have more mana. Dwarves have more health. Orcs are strong warriors.'
                     ]);
-                } else if (cmd.includes('non') || cmd.includes('binary') || cmd.includes('they')) {
-                    game.player.gender = 'nonbinary';
-                    game.needsGender = false;
-                    game.needsRace = true;
-                    speakSequence([
-                        'Non-binary selected!',
-                        'Now, what is your race?',
-                        'You can be a Human, Elf, Dwarf, or Orc.',
-                        'Humans are balanced. Elves have more mana. Dwarves have more health. Orcs are strong warriors.'
-                    ]);
                 } else {
-                    speak('Please say male, female, or non-binary.');
+                    speak('Please say male, or female.');
                 }
                 return;
             }
@@ -3400,3 +3386,4 @@
 
 
 </html>
+
