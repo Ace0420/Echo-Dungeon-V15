@@ -423,7 +423,7 @@
         // Continue with Part 2...
         // ============================================================
                 // ============================================================
-        // ECHO DUNGEON V15 - PART 2
+        // ECHO DUNGEON V15 - PART 2 (FIXED SPEECH RECOGNITION)
         // Merchant Items, Speech Systems, Character Creation
         // ============================================================
 
@@ -517,73 +517,67 @@
         }
 
         // ============================================================
-        // SPEECH RECOGNITION SETUP
+        // SPEECH RECOGNITION - V10.5 Pattern (Create fresh each time)
         // ============================================================
-        
-        function initSpeechRecognition() {
-            if ('webkitSpeechRecognition' in window) {
-                recognition = new webkitSpeechRecognition();
-            } else if ('SpeechRecognition' in window) {
-                recognition = new SpeechRecognition();
-            } else {
-                speak('Sorry, your browser does not support speech recognition. Please use Chrome or Edge.');
-                return false;
-            }
-            
-            recognition.continuous = false;
-            recognition.interimResults = false;
-            recognition.lang = 'en-US';
-            
-            recognition.onresult = function(event) {
-                const transcript = event.results[0][0].transcript.toLowerCase().trim();
-                processCommand(transcript);
-            };
-            
-            recognition.onerror = function(event) {
-                if (event.error === 'no-speech') {
-                    speak('I did not hear anything. Please try again.');
-                } else if (event.error === 'not-allowed') {
-                    speak('Microphone access denied. Please enable microphone permissions.');
-                } else {
-                    speak('Recognition error. Please try again.');
-                }
-                game.listening = false;
-            };
-            
-            recognition.onend = function() {
-                game.listening = false;
-            };
-            
-            return true;
-        }
 
         function startListening() {
-            if (!recognition) {
-                speak('Speech recognition not initialized.');
+            if (!browserSupport.speechRecognition || !browserSupport.https) {
+                speak('Voice recognition requires HTTPS and a compatible browser like Chrome or Edge.');
                 return;
             }
             
             if (game.listening) {
-                recognition.stop();
-                game.listening = false;
+                stopListening();
                 return;
             }
             
             try {
-                if (window.speechSynthesis && window.speechSynthesis.speaking) {
-                    window.speechSynthesis.cancel();
-                }
-            } catch(e) {
-                console.error('Error canceling speech:', e);
-            }
-            
-            try {
+                const Recognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+                recognition = new Recognition();
+                recognition.continuous = false;
+                recognition.lang = 'en-US';
+                
+                recognition.onstart = () => {
+                    game.listening = true;
+                    micButton.classList.add('listening');
+                };
+                
+                recognition.onresult = (event) => {
+                    const command = event.results[0][0].transcript.toLowerCase().trim();
+                    displayText(`You said: "${command}"`);
+                    stopListening();
+                    setTimeout(() => processCommand(command), 500);
+                };
+                
+                recognition.onerror = (event) => {
+                    stopListening();
+                    if (event.error !== 'no-speech' && event.error !== 'aborted') {
+                        speak('Voice error. Try again.');
+                    }
+                };
+                
+                recognition.onend = () => {
+                    stopListening();
+                };
+                
                 recognition.start();
-                game.listening = true;
-            } catch(e) {
-                console.error('Error starting recognition:', e);
+                
+            } catch (e) {
+                console.error('Recognition error:', e);
                 speak('Could not start listening. Please try again.');
                 game.listening = false;
+                micButton.classList.remove('listening');
+            }
+        }
+
+        function stopListening() {
+            game.listening = false;
+            micButton.classList.remove('listening');
+            if (recognition) {
+                try {
+                    recognition.stop();
+                } catch (e) {}
+                recognition = null;
             }
         }
 
@@ -594,21 +588,9 @@
         function processCommand(command) {
             const cmd = command.toLowerCase().trim();
             
-            // Game start
-            if (!game.started) {
-                game.started = true;
-                game.needsGender = true;
-                speakSequence([
-                    'Welcome to Echo Dungeon V-15!',
-                    'Let us create your hero!',
-                    'First, what is your gender? Say male, or female.'
-                ]);
-                return;
-            }
-            
             // Gender selection with flexible recognition
             if (game.needsGender) {
-                if (cmd.includes('male') && !cmd.includes('female')) {
+                if (cmd.includes('male') || cmd.includes('dude') && !cmd.includes('female')) {
                     game.player.gender = 'male';
                     game.needsGender = false;
                     game.needsRace = true;
@@ -624,6 +606,10 @@
                     game.needsRace = true;
                     speakSequence([
                         'Female selected!',
+                        'Now, what is your race?',
+                        'You can be a Human, Elf, Dwarf, or Orc.',
+                        'Humans are balanced. Elves have more mana. Dwarves have more health. Orcs are strong warriors.'
+                    ]);
                         'Now, what is your race?',
                         'You can be a Human, Elf, Dwarf, or Orc.',
                         'Humans are balanced. Elves have more mana. Dwarves have more health. Orcs are strong warriors.'
@@ -799,12 +785,16 @@
                 deleteSave(cmd.replace('delete', '').replace('save', '').trim());
             } else if (cmd.includes('help')) {
                 showHelp();
+            } else if (cmd.includes('hint')) {
+                giveHint();
             } else if (cmd.includes('junk') && (cmd.includes('add') || cmd.includes('put'))) {
                 addToJunk(cmd);
             } else if (cmd.includes('sell junk') || cmd.includes('sell all junk')) {
                 sellAllJunk();
             } else if (cmd.includes('view junk') || cmd.includes('check junk')) {
                 viewJunk();
+            } else if (cmd.includes('lockpicks') || cmd.includes('lockpick')) {
+                useLockpicks();
             } else {
                 speak('Unknown command. Say help for options.');
             }
@@ -881,7 +871,9 @@
         }
 
         // ============================================================
-        // END OF PART 2
+        // END OF PART 2 (FIXED)
+        // Continue with Part 3...
+        // ============================================================
         // Continue with Part 3...
         // ============================================================
                 // ============================================================
@@ -3386,6 +3378,7 @@
 
 
 </html>
+
 
 
 
